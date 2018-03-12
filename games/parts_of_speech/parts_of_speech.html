@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Parts of Speech Game</title>
+    <link rel="stylesheet" type="text/css" href="../../css/lakestyle.css"/>
+    <style>
+        #container {
+            background-image: url(bkgd.jpg);
+            border: 5px solid black;
+        }
+
+        #clrbox {
+            border: 1px solid black;
+            font-size: 20px;
+            position: absolute;
+            bottom: 1%;
+            left: 85%;
+        }
+
+        #wrongo, #correcto {
+            text-align: center;
+            width: 100%;
+            padding: 1%;
+            height: 100%;
+        }
+
+        #wrongo img, #correcto img {
+            max-height: 100%;
+        }
+
+        span.empty {
+            padding: 0.2vh 4vw;
+            margin: 1vw;
+            height: 10vh;
+            background-color: lightblue;
+        }
+
+        button {
+            margin: 2vh 2vw;
+            padding: 10px;
+        }
+
+        .anstext {
+            color: white;
+            font-style: italic;
+            display: inline-block;
+            margin: 30px 40px;
+            border-radius: 25px;
+            background: #939393;
+            padding: 1vh 2vw;
+        }
+
+        .anspos {
+            color: white;
+            font-style: italic;
+            display: inline-block;
+            margin: 30px 40px;
+            border-radius: 25px;
+            background: #ee6200;
+            padding: 1vh 2vw;
+        }
+
+        .ansposalt {
+            color: white;
+            font-style: italic;
+            display: inline-block;
+            margin: 30px 40px;
+            border-radius: 25px;
+            background: #005fee;
+            padding: 1vh 2vw;
+        }
+
+        .btn:hover {
+            box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+        }
+
+        #problem {
+            width: 100%;
+            height: 100%;
+            text-align: center;
+        }
+
+        #questionx {
+            margin-top: 20%;
+            height: 20%;
+            font-size: 1.5em;
+        }
+
+        .sentence {
+            line-height: 150%;
+        }
+
+        #endgame {
+            background-image: url(bkgd.jpg);
+            border: 5px solid black;
+            text-align: center;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            -webkit-transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+<body>
+<div id="container" class="centerall">
+    <h3 style="text-align: center;" id="instruct">Drag the proper word to the sentence then choose the correct part of
+        speech</h3>
+    <div id="wrongo" class="noshow">
+        <img src="placeholderLeft.png" alt="mayanGodBlue"/>
+    </div>
+    <div id="correcto" class="noshow">
+        <img src="placeholderRight.png" alt="mayanGodRed"/>
+    </div>
+    <div id="questionx">
+        <div id="problem"></div>
+    </div>
+
+    <div id="endgame" class="noshow">
+        <h3 id="message"></h3>
+        <img src="../../images/icons/bt_redo1.png" id="redo" alt="redo button">
+        <a href="../../chillmath.html"><img src="../../images/icons/bt_backNumbers.png"
+                                            alt="back to numbers button"></a>
+    </div>
+    <button id="clrbox" class="btn">CLEAR BOXES</button>
+</div>
+
+<script type="text/javascript" src="../../js/jquery-2.1.4.min.js"></script>
+<script type="text/javascript" src="../../js/jquery-ui.min.js"></script>
+<script type="text/javascript" src="../../js/game_functions.js"></script>
+<script type="text/javascript" src="../../js/jquery.ui.touch-punch.min.js"></script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#rewatch").on("click", function () {
+            $("#questionx").hide();
+            $("#vid").show();
+            $("#rewatch").hide();
+            $('#vid').get(0).play();
+            $("#container").css("background-color", "black");
+        });
+
+        if (typeof (sessionStorage.getItem("points")) == 'undefined') {
+            sessionStorage.setItem("points", 0);
+        }
+        var pts = sessionStorage.getItem("points");
+
+        var sentences = [
+            "A baby deer is called a [fawn]. [noun]",
+            "After 500 years, the Ojibwe completed their [journey]. [noun]",
+            "The children listened closely as the elder told the story of their tribe’s [history]. [noun]",
+            "He [screamed] at the top of his lungs. [verb]",
+            "The average male black bear [weighs] between 150 to 300 pounds. [verb]",
+            "Her jingle dress made a twinkling noise as she [danced]. [verb]",
+            "The Ojibwe used nets – called dipnets – to [fish]. [verb]",
+            "The Ojibwe [hunted] buffalo, dear and rabbits. [verb]",
+            "My mom says my room is [messy]. [adjective]",
+            "A [small] stream wove through the wood. [adjective]",
+            "The Ojibwe lived in [domed] structures called wigwams. [adjective]",
+            "The water in the river was [cold], but had not yet frozen over. [adjective]",
+            "The wolf [stealthily] hunted the rabbit. [adverb]",
+            "The horse ran [rapidly] through the plains. [adverb]",
+            "She [carefully] sewed neat rows of beads on her moccasins. [adverb]",
+        ];
+
+        var prob = [];
+
+        var pointer = 0;
+
+        var probElement = null;
+
+        correct = false;
+
+        var dropped = 0;
+
+        var score = 0;
+
+        const shuffleArray = arr => arr.sort(() => Math.random() - 0.5);
+
+        //Fisher-Yates shuffle algorithm
+        function shuffle(a) {
+            var j, x, i;
+            for (i = a.length - 1; i > 0; i--) {
+                j = Math.floor(Math.random() * (i + 1));
+                x = a[i];
+                a[i] = a[j];
+                a[j] = x;
+            }
+        }
+
+        shuffle(sentences);
+
+        function makeProblem() {
+
+            for (var sent of sentences) {
+                probElement = $("<div class='sentence'></div>");
+                a = "";
+                for (var s of sent) {
+                    if (s == '[') {
+                        a += "<span class='empty'>";
+                    }
+                    else if (s == ']') {
+                        a += "</span>"
+                    }
+                    else {
+                        a += s;
+                    }
+                }
+
+                var probElement = probElement.html(a);
+                var answers = [];
+
+                $(probElement).find('span').each(function () {
+                    text = $(this).text();
+                    $(this).attr('data-id', text);
+                    $(this).text("");
+                    answers.push(text);
+                });
+
+                prob.push({div: probElement, text: answers});
+            }
+        }
+
+        makeProblem();
+
+        function cycleProblems() {
+            $("#container").css("background-image", "url(bkgd.jpg)");
+            dropped = 0;
+            if (pointer >= prob.length) {
+                endGame();
+                return;
+            }
+            $("#problem").html("");
+            current = prob[pointer];
+            index = shuffleArray([0, 1]);
+            i = index[0];
+            j = index[1];
+
+            ansNoun = "noun";
+            ansVerb = "verb";
+            ansAdj = "adjective";
+            ansAdv = "adverb";
+
+            $("#problem").append(current.div);
+            $("#problem").append("<span class='draggable anstext btn'>" + current.text[i] + "</span>");
+            $("#problem").append("<span class='draggable anspos btn'>" + current.text[j] + "</span>");
+            if (current.text[i] === "noun" || current.text[j] === "noun") {
+                $("#problem").append("<span class='draggable ansposalt btn'>" + ansAdj + "</span>");
+            }
+            else if (current.text[i] === "verb" || current.text[j] === "verb") {
+                $("#problem").append("<span class='draggable ansposalt btn'>" + ansAdv + "</span>");
+            }
+            else if (current.text[i] === "adjective" || current.text[j] === "adjective") {
+                $("#problem").append("<span class='draggable ansposalt btn'>" + ansNoun + "</span>");
+            }
+            else {
+                $("#problem").append("<span class='draggable ansposalt btn'>" + ansVerb + "</span>");
+            }
+
+            $('.draggable').draggable({});
+
+            $('.empty').droppable({
+                drop: function (event, ui) {
+                    dropped++;
+                    ans = $(this).attr("data-id");
+                    userans = $(ui.draggable).text();
+                    if (ans == userans) {
+                        correct = true;
+                    } else {
+                        correct = false;
+                    }
+                    $(this).droppable('disable');
+                    $(ui.draggable).draggable('disable');
+
+                    if (dropped == 2) {
+                        validateAndCycle()
+                    }
+                }
+            })
+        }
+
+        function endGame() {
+            sessionStorage.setItem("points", pts);
+            $("#container").css('background-image', 'none');
+            $("#instruct").hide();
+            var message = "";
+            if (score == 30) {
+                message = "Perfect You answered all problems perfectly!"
+            }
+            else {
+                message = "You answered " + parseInt(score / 2) + " problems perfectly!"
+            }
+            $("#message").text(message);
+            $("#questionx").hide();
+            $("#endgame").show();
+        }
+
+        $("#redo").click(function () {
+            $("#instruct").show();
+            $("#questionx").show();
+            $("#endgame").hide();
+            pointer = 0;
+            cycleProblems();
+        });
+
+        function validateAndCycle() {
+            if (correct) {
+                $(".draggable").css({"background-color": "green"});
+                $("#correcto").slideDown('slow');
+                score += 2;
+                pts = eval(pts) + 2;
+                $("#numberpts").text(pts);
+            }
+            else {
+                $(".draggable").css({"background-color": "red"});
+                $("#container").css("background-image", "url(bkgd_wrong.jpg)");
+                $("#wrongo").slideDown('slow');
+            }
+
+            pointer++;
+            correct = false;
+            setTimeout(function () {
+                $("#wrongo").hide();
+                $("#correcto").hide();
+                cycleProblems()
+            }, 2000)
+        }
+
+        // START GAME & CLEAR ANSWER FUNCTIONS
+        cycleProblems();
+
+        $("#clrbox").click(function () {
+            cycleProblems()
+        });
+    });
+</script>
+</body>
+</html>
